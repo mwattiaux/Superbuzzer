@@ -7,7 +7,7 @@ load_dotenv()
 
 client = socketio.AsyncClient()
 server_url = f"{os.getenv("server_ip")}:{os.getenv("server_port")}"
-username = os.getenv("username")
+username = os.getenv("game_username")
 roomlist = []
 
 async def main():

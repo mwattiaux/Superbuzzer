@@ -3,6 +3,7 @@ import uvicorn
 import random
 import json
 from datetime import datetime
+from generate_questions import generate_quiz
 
 sio = socketio.AsyncServer(async_mode='asgi')
 app = socketio.ASGIApp(sio)
@@ -49,10 +50,11 @@ async def exit_room(sid, room):
 async def game_loop(sid, message):
     global rooms
     room = sio.rooms(sid)[1]
-    print(sio.rooms(sid))
-    questions = load_questions(2)
+    questions = generate_quiz(2, "Random")
+    print(questions)
 
-    for question in questions:
+    for question in questions['questions']:
+        print(question)
 
         await send_question(question, room)
         waiting_time = 10
@@ -87,24 +89,24 @@ async def send_message(sid, data):
         'date': str(datetime.now())
     })
 
-def load_questions(number_of_question: int):
-    try:
-        questions = []
-        with open(question_file, 'r') as file:
-            data = json.load(file)
-        seen = set()
-        max_question = int(list(data.keys())[-1])
-        while len(questions) < number_of_question:
-            question_number = random.randint(1,max_question)
-            while question_number in seen:
-                question_number = random.randint(1,max_question)
-            seen.add(question_number)
-            data[f"{question_number}"]["choices"] = list(set(data[f"{question_number}"]["choices"]))
-            questions.append(data[f"{question_number}"])
-        return questions
+# def load_questions(number_of_question: int):
+#     try:
+#         questions = []
+#         with open(question_file, 'r') as file:
+#             data = json.load(file)
+#         seen = set()
+#         max_question = int(list(data.keys())[-1])
+#         while len(questions) < number_of_question:
+#             question_number = random.randint(1,max_question)
+#             while question_number in seen:
+#                 question_number = random.randint(1,max_question)
+#             seen.add(question_number)
+#             data[f"{question_number}"]["choices"] = list(set(data[f"{question_number}"]["choices"]))
+#             questions.append(data[f"{question_number}"])
+#         return questions
             
-    except FileNotFoundError:
-        print(f"Error: The file '{question_file} was not found.")
+#     except FileNotFoundError:
+#         print(f"Error: The file '{question_file} was not found.")
 
 
  
@@ -125,7 +127,6 @@ async def send_question(question, room):
         "question": question["question"],
         "choices": question["choices"]
     }
-
 
     print(f'Envoi de la question : {payload}')
     await sio.emit("send_question", payload, room=room)

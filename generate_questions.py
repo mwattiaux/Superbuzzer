@@ -10,30 +10,30 @@ client = OpenAI(api_key=os.getenv('openai_key'))
 
 def generate_quiz(count, subject):
     schema = {
-    "type": "object",
-    "properties": {
-        "questions": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "required": ["question", "choices", "valid"],
-                "properties": {
-                    "question": {"type": "string"},
-                    "choices": {
-                        "type": "array", 
-                        "minItems": 4, 
-                        "maxItems": 4, 
-                        "items": {"type": "string"}
+        "type": "object",
+        "properties": {
+            "questions": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["question", "choices", "valid"],
+                    "properties": {
+                        "question": {"type": "string"},
+                        "choices": {
+                            "type": "array", 
+                            "minItems": 4, 
+                            "maxItems": 4, 
+                            "items": {"type": "string"}
+                        },
+                        "valid": {"type": "string"}
                     },
-                    "valid": {"type": "string"}
-                },
-                "additionalProperties": False
+                    "additionalProperties": False
+                }
             }
-        }
-    },
-    "required": ["questions"],
-    "additionalProperties": False
-}
+        },
+        "required": ["questions"],
+        "additionalProperties": False
+    }
 
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
