@@ -1,13 +1,17 @@
 import socketio
 import asyncio
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 client = socketio.AsyncClient()
-server_ip = "127.0.0.1:5000"
+server_url = f"{os.getenv("server_ip")}:{os.getenv("server_port")}"
 roomlist = []
 
 async def main():
-    await client.connect(f'http://{server_ip}', auth={
-        'username': 'Bob'
+    await client.connect(f'http://{server_url}', auth={
+        'username': 'BMmaster'
     })
 
     client.on('new_message', print)
