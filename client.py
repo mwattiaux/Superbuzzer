@@ -7,51 +7,59 @@ load_dotenv()
 
 client = socketio.AsyncClient()
 server_url = f"{os.getenv("server_ip")}:{os.getenv("server_port")}"
+username = os.getenv("username")
 roomlist = []
 
 async def main():
     await client.connect(f'http://{server_url}', auth={
-        'username': 'BMmaster'
+        'username': username
     })
 
     client.on('new_message', print)
 
-    
+    asyncio.create_task(handle_user_input())
+
+    await client.wait()
+
+async def handle_user_input():
+    """Gère le menu et les saisies clavier en tâche de fond"""
     valid_input = False
     while not valid_input:
-        match await asyncio.to_thread(input,"1: create a room\n2: Join a room\n"):
+        match await asyncio.to_thread(input, "1: create a room\n2: Join a room\n"):
             case "1":
                 valid_input = True
                 room_name = None
                 while not room_name:
-                    room_name = await asyncio.to_thread(input,"Room name: ")
+                    room_name = await asyncio.to_thread(input, "Room name: ")
                 await client.emit('create_room', room_name)
             case "2":
                 if roomlist:
                     valid_input = True
                     room_name = None
                     while not (room_name in roomlist):
-                        room_name = await asyncio.to_thread(input,"Room name: ")
+                        room_name = await asyncio.to_thread(input, "Room name: ")
                     await client.emit('join_room', room_name)
                 else:
                     print("No room available")
             case __:
-                await print("Enter a valid input")
+                print("Enter a valid input")
+                
     if await asyncio.to_thread(input) == "start":
         await client.emit('start_game', {})
 
-    await client.wait()
 
-
-@client.on('message')
+@client.on('server_message')
 async def show_message(message):
+    print("========================\n")
     print(f"###  {message}")
+    print("========================\n")
 
 @client.on('available_rooms')
 async def on_available_rooms(rooms):
     global roomlist
     roomlist = rooms
-    print(f"\n### Available Rooms #")
+    print("========================\n")
+    print(f"\n### Available Rooms ###")
     if not rooms:
         print("No rooms")
     else:
@@ -83,12 +91,11 @@ async def show_final_results(package):
         username = user_stats[0]
         user_points = user_stats[1]
         print(f"{index+1}. {username} - {user_points} points")
-    print(package)
     print("\n" + "-"*30)
 
 @client.on("time_left")
 async def show_time_left(time: str):
-    print(f"\rTime left : {time} seconds\n", end="", flush=True)
+    print(f"\rTime left : {time} seconds", end="", flush=True)
 
 if __name__ == '__main__':
     asyncio.run(main())

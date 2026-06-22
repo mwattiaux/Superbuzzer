@@ -38,17 +38,18 @@ async def create_room(sid, room_name):
 @sio.event
 async def join_room(sid, room):
     await sio.enter_room(sid, room=room)
-    await sio.emit('message', f"User {clients[sid]['username']} joined room", room=room)
+    await sio.emit('server_message', f"User {clients[sid]['username']} joined room {room}", room=room)
 
 @sio.event
 async def exit_room(sid, room):
     await sio.leave_room(sid, room=room)
-    await sio.emit('message', f"User {clients[sid]['username']} left room", room=room)
+    await sio.emit('server_message', f"User {clients[sid]['username']} left room {room}", room=room)
 
 @sio.on('start_game')
 async def game_loop(sid, message):
-
-    room = sio.rooms(sid)[0]
+    global rooms
+    room = sio.rooms(sid)[1]
+    print(sio.rooms(sid))
     questions = load_questions(2)
 
     for question in questions:
@@ -62,13 +63,15 @@ async def game_loop(sid, message):
         print("\rTemps écoulé !                  ")
 
     package = []
-    for client in clients.values():
-        print(client)
-        package.append((client['username'], client['points']))
+    list_of_ids = sio.manager.get_participants(namespace="/", room=room)
+    for item in list_of_ids:
+        player_sid = item[0]
+        package.append((clients[player_sid]['username'], clients[player_sid]['points']))
     package.sort(key= lambda x: x[1], reverse=True)
 
     await sio.emit('final_result', package, room=room)
     await sio.close_room(room)
+    rooms.discard(room)
 
 
 
