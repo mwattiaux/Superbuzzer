@@ -12,6 +12,7 @@ questions = []
 answered = None
 clients = {}
 current_question = None
+rooms = set()
 
 
 @sio.event
@@ -19,12 +20,31 @@ async def connect(sid, environ, auth):
     username = auth.get('username')
     print(f'The user {username} is connected')
     clients[sid] =  {"username" : username, "points" : 0}
+    await sio.emit('available_rooms', list(rooms), to=sid)
 
 @sio.event
 async def disconnect(sid):
     username = clients.get(sid)
     print(f'The user {username} is disconnected')
     clients.pop(sid)
+
+@sio.event
+async def create_room(sid, room_name):
+    if room_name:
+        rooms.add(room_name)
+        await sio.enter_room(sid, room_name)
+        print(f"Room {room_name} created by {clients[sid]['username']}")
+        await sio.emit('available rooms', list(rooms))
+
+@sio.event
+async def join_room(sid, room):
+    await sio.enter_room(sid, room=room)
+    await sio.emit('message', f"User {clients[sid]['username']} joined room", room=room)
+
+@sio.event
+async def exit_room(sid, room):
+    await sio.leave_room(sid, room=room)
+    await sio.emit('message', f"User {clients[sid]['username']} left room", room=room)
 
 @sio.on('start_game')
 async def game_loop(user_id, message):
@@ -47,6 +67,7 @@ async def game_loop(user_id, message):
     package.sort(key= lambda x: x[1], reverse=True)
 
     await sio.emit('final_result', package)
+    # await sio.close_room()
 
 
 

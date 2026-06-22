@@ -3,21 +3,55 @@ import asyncio
 
 client = socketio.AsyncClient()
 server_ip = "127.0.0.1:5000"
+roomlist = []
+
 async def main():
     await client.connect(f'http://{server_ip}', auth={
-        'username': 'Khun'
+        'username': 'Bob'
     })
 
     client.on('new_message', print)
 
     
-    message = await asyncio.to_thread(input,"Hello to Superbuzzer quizz dear friend ! \n I'm Corentin, best presentator of Belgium. \n I'm assisted by Jerome who's still currently studying the code of this application ! \n\n What do you want to do ? \n\n\t 1. Play a game \n\t 2. Drink a beer \n\n Please enter your choice (number from 1 to 1) : ")
-    print(message)
-    if message == "1":
+    valid_input = False
+    while not valid_input:
+        match input("1: create a room\n2: Join a room\n"):
+            case "1":
+                valid_input = True
+                while not room_name:
+                    room_name = input("Room name: ")
+                await client.emit('create_room', room_name)
+            case "2":
+                if roomlist:
+                    valid_input = True
+                    while not (room_name in roomlist):
+                        room_name = input("Room name: ")
+                    await client.emit('join_room', room_name)
+                else:
+                    print("No room available")
+            case __:
+                await print("Enter a valid input")
+    if input() == "start":
         await client.emit('start_game', {})
 
     await client.wait()
 
+
+@client.on('message')
+async def show_message(message):
+    print(f"###  {message}")
+
+@client.on('available_rooms')
+def on_available_rooms(rooms):
+    global roomlist
+    roomlist = rooms
+    print(f"\n### Available Rooms #")
+    if not rooms:
+        print("No rooms")
+    else:
+        for room in rooms:
+            print(f"-- {room}")
+    print("========================\n")
 
 @client.on("send_question")
 async def show_question(question):
