@@ -10,11 +10,25 @@ async def main():
 
     client.on('new_message', print)
 
+    menu = (
+    "Hello to Superbuzzer quizz dear friend !\n"
+    "I'm Corentin, best presentator of Belgium.\n"
+    "I'm assisted by Jerome who's still currently studying the code of this application !\n\n"
+    "What do you want to do ?\n\n"
+    "\t 1. Create a party room\n"
+    "\t 2. Join a party room\n"
+    "\t 3. Drink a beer\n\n"
+    "Please enter your choice [1-3] : "
+    )
     
-    message = await asyncio.to_thread(input,"Hello to Superbuzzer quizz dear friend ! \n I'm Corentin, best presentator of Belgium. \n I'm assisted by Jerome who's still currently studying the code of this application ! \n\n What do you want to do ? \n\n\t 1. Play a game \n\t 2. Drink a beer \n\n Please enter your choice (number from 1 to 1) : ")
+    message = await asyncio.to_thread(input, menu)
     print(message)
     if message == "1":
         await client.emit('start_game', {})
+    elif message == "2":
+        pass
+    elif message == "3":
+        print("Sorry, Jerome drank all my stock of beers during last weekend.")
 
     await client.wait()
 
