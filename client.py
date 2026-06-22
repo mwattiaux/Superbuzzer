@@ -15,23 +15,25 @@ async def main():
     
     valid_input = False
     while not valid_input:
-        match input("1: create a room\n2: Join a room\n"):
+        match await asyncio.to_thread(input,"1: create a room\n2: Join a room\n"):
             case "1":
                 valid_input = True
+                room_name = None
                 while not room_name:
-                    room_name = input("Room name: ")
+                    room_name = await asyncio.to_thread(input,"Room name: ")
                 await client.emit('create_room', room_name)
             case "2":
                 if roomlist:
                     valid_input = True
+                    room_name = None
                     while not (room_name in roomlist):
-                        room_name = input("Room name: ")
+                        room_name = await asyncio.to_thread(input,"Room name: ")
                     await client.emit('join_room', room_name)
                 else:
                     print("No room available")
             case __:
                 await print("Enter a valid input")
-    if input() == "start":
+    if await asyncio.to_thread(input) == "start":
         await client.emit('start_game', {})
 
     await client.wait()
