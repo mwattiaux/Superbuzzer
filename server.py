@@ -5,7 +5,10 @@ import json
 from datetime import datetime
 from generate_questions import generate_quiz
 
-sio = socketio.AsyncServer(async_mode='asgi')
+sio = socketio.AsyncServer(
+    async_mode='asgi',
+    cors_allowed_origins="*"
+)
 app = socketio.ASGIApp(sio)
 
 question_file = 'questions/questions.json'
@@ -145,4 +148,4 @@ async def answer_receiver(user_id, user_answer):
 
 
 if __name__ == '__main__':
-    uvicorn.run('server:app', host='0.0.0.0', port=5000)
+    uvicorn.run('server:app', host='0.0.0.0', port=5001)
