@@ -44,7 +44,7 @@ async def show_message(message):
     print(f"###  {message}")
 
 @client.on('available_rooms')
-def on_available_rooms(rooms):
+async def on_available_rooms(rooms):
     global roomlist
     roomlist = rooms
     print(f"\n### Available Rooms #")

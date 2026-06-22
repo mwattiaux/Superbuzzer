@@ -8,7 +8,6 @@ sio = socketio.AsyncServer(async_mode='asgi')
 app = socketio.ASGIApp(sio)
 
 question_file = 'questions/questions.json'
-questions = []
 answered = None
 clients = {}
 current_question = None
@@ -32,9 +31,9 @@ async def disconnect(sid):
 async def create_room(sid, room_name):
     if room_name:
         rooms.add(room_name)
-        await sio.enter_room(sid, room_name)
+        await join_room(sid, room_name)
         print(f"Room {room_name} created by {clients[sid]['username']}")
-        await sio.emit('available rooms', list(rooms))
+        await sio.emit('available_rooms', list(rooms))
 
 @sio.event
 async def join_room(sid, room):
@@ -47,15 +46,17 @@ async def exit_room(sid, room):
     await sio.emit('message', f"User {clients[sid]['username']} left room", room=room)
 
 @sio.on('start_game')
-async def game_loop(user_id, message):
+async def game_loop(sid, message):
 
-    load_questions(2)
+    room = sio.rooms(sid)[0]
+    questions = load_questions(2)
 
     for question in questions:
 
-        await send_question(question)
-        for i in range(10):
-            await sio.emit("time_left", 10-i)
+        await send_question(question, room)
+        waiting_time = 10
+        for i in range(waiting_time):
+            await sio.emit("time_left", waiting_time-i, room=room)
             await sio.sleep(1)
             
         print("\rTemps écoulé !                  ")
@@ -66,8 +67,8 @@ async def game_loop(user_id, message):
         package.append((client['username'], client['points']))
     package.sort(key= lambda x: x[1], reverse=True)
 
-    await sio.emit('final_result', package)
-    # await sio.close_room()
+    await sio.emit('final_result', package, room=room)
+    await sio.close_room(room)
 
 
 
@@ -84,8 +85,8 @@ async def send_message(sid, data):
     })
 
 def load_questions(number_of_question: int):
-    global questions
     try:
+        questions = []
         with open(question_file, 'r') as file:
             data = json.load(file)
         seen = set()
@@ -97,6 +98,7 @@ def load_questions(number_of_question: int):
             seen.add(question_number)
             data[f"{question_number}"]["choices"] = list(set(data[f"{question_number}"]["choices"]))
             questions.append(data[f"{question_number}"])
+        return questions
             
     except FileNotFoundError:
         print(f"Error: The file '{question_file} was not found.")
@@ -110,7 +112,7 @@ def answer_checker(question, answer):
     return answer == str(question["choices"].index(question["valid"]))
    
 
-async def send_question(question):
+async def send_question(question, room):
     global answered, current_question
 
     current_question = question
@@ -123,7 +125,7 @@ async def send_question(question):
 
 
     print(f'Envoi de la question : {payload}')
-    await sio.emit("send_question", payload)
+    await sio.emit("send_question", payload, room=room)
         
 @sio.on("send_answer")
 async def answer_receiver(user_id, user_answer):
